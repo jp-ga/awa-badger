@@ -1,13 +1,22 @@
 variables:
-  Imain: [180.0, 260.0]  # in A
-  Ibuck: [500.0, 550.0]  # in A
-  gun_phase: [-40.7588, 39.2412]  # in deg
-  gun_inj_amp: [60.0, 65.0]  # in MV
-  Linacphase: [-30.0, 30.0]  # in deg
-  DQ4: [-5.0, 5.0]  # in T/m
-  DQ5: [-5.0, 5.0]  # in T/m
-  DQ6: [-5.0, 5.0]  # in T/m
-  DQ7: [-5.0, 5.0]  # in T/m
+  Imain: [180.0, 260.0]  # in A -> [360, 520] in PV unit (=I_peak/0.5)
+  # set ?, read ?
+  Ibuck: [500.0, 550.0]  # in A -> [754, 829] in PV unit (=I_peak/0.6634)
+  # set ?, read ?
+  gun_phase: [-40.7588, 39.2412]  # in deg -> [-40.75, 39.20] in PV unit (precision of 0.05)
+  # set AWALLRF:K1:SetPhase, read AWALLRF:K1:MeasurePhase
+  gun_inj_amp: [60.0, 65.0]  # in MV -> [0, 6.5] in PV unit
+  # set AWA:DAC0:Ch08, read AWALLRF:K1:MeasuredAmp
+  Linacphase: [-30.0, 30.0]  # in deg -> [-30.00, 30.00] in PV unit (precision of 0.05)
+  # set ?, read ?
+  DQ4: [-5.0, 5.0]  # in T/m -> [-599, 599] in PV unit (=K/0.00893)
+  # set ?, read ?
+  DQ5: [-5.0, 5.0]  # in T/m -> [-599, 599] in PV unit (=K/0.00893)
+  # set ?, read ?
+  DQ6: [-5.0, 5.0]  # in T/m -> [-599, 599] in PV unit (=K/0.00893)
+  # set ?, read ?
+  DQ7: [-5.0, 5.0]  # in T/m -> [-599, 599] in PV unit (=K/0.00893)
+  # set ?, read ?
 constraints:
   numParticles: [GREATER_THAN, 259522.0]  # less than 1% loss
 objectives: {rms_xy in m: MINIMIZE}
@@ -15,15 +24,15 @@ constants: {}
 linked_variables: {}
 
 # Defaults: 
-#   Imain: 230 A
-#   Ibuck: 550 A
-#   gun_phase: -0.7588 deg
-#   gun_inj_amp: 61.26 MV
-#   Linacphase: 0.0 deg
-#   DQ4: 0.000000001 T/m
-#   DQ5: 0.000000001 T/m
-#   DQ6: 0.000000001 T/m
-#   DQ7: 0.000000001 T/m
+#   Imain: 230 A -> 460 PV unit
+#   Ibuck: 550 A -> 829 PV unit
+#   gun_phase: -0.7588 deg -> -0.75 PV unit
+#   gun_inj_amp: 61.26 MV -> 1.638 PV unit
+#   Linacphase: 0.0 deg -> 0.00 PV unit
+#   DQ4: 0.000000001 T/m -> 0 PV unit
+#   DQ5: 0.000000001 T/m -> 0 PV unit
+#   DQ6: 0.000000001 T/m -> 0 PV unit
+#   DQ7: 0.000000001 T/m -> 0 PV unit
 
 # Bunch charge: 1 nC
 
