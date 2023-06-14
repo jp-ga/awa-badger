@@ -1,8 +1,11 @@
-NAME,MIN,MAX,SCALE,OFFSET,UNIT,DESCRIPTION
-AWA:Bira3Ctrl:Ch00,0,1,1,0,kG-m,test
-AWA:Bira2Ctrl:Ch00,0,1,1,0,kG-m,test
-AWA:Drive:DS1:Ctrl,6.05,9.07,1,0,kG,Focusing solenoid
-AWA:Drive:DS3:Ctrl,0,2.5,1,0,kG,Matching solenoid
-AWA:Bira3Ctrl:Ch03,-2,2,1,0,kG-m,DQ4
-AWA:Bira3Ctrl:Ch04,-5,5,1,0,kG-m,DQ5
-AWA:Bira3Ctrl:Ch05,-0.5,0.5,1,0,kG-m,DQ6
+NAME,MIN,MAX,UNIT,DESCRIPTION
+AWA:Bira3Ctrl:Ch00,0,1,kG-m,test
+AWA:Bira2Ctrl:Ch00,0,1,kG-m,test
+AWA:Drive:DS1:Ctrl,6.05,9.07,kG,Focusing solenoid
+AWA:Drive:DS3:Ctrl,0,2.5,kG,Matching solenoid
+AWA:Bira3Ctrl:Ch03,-2,2,kG-m,DQ4
+AWA:Bira3Ctrl:Ch04,-5,5,kG-m,DQ5
+AWA:Bira3Ctrl:Ch05,-5,5,kG-m,DQ6
+AWA:Bira3Ctrl:Ch06,-5,5,kG-m,DQ7
+AWALLRF:K1:SetPhase,-40.75,39.2,counts,Gun phase
+AWA:DAC0:Ch08,0,6.5,counts,Gun RF amplitude
