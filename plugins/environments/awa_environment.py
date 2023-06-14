@@ -6,7 +6,7 @@ from scipy.ndimage import gaussian_filter
 
 from plugins.environments.environment import Environment, validate_observable_names
 from plugins.interfaces.interface import Interface
-from pydantic import Field, PositiveFloat
+from pydantic import Field, PositiveFloat, PositiveInt
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -27,6 +27,7 @@ class AWAEnvironment(Environment):
     fractional_charge_deviation: PositiveFloat = Field(
         0.1, description="fractional deviation from target charge allowed"
     )
+    n_samples: PositiveInt = 5
 
     def __init__(
             self, varaible_file: str, observable_file: str, interface: Interface,
@@ -53,35 +54,50 @@ class AWAEnvironment(Environment):
     def get_observables(self, observable_names: List[str]) -> Dict:
         """make measurements until charge range is within bounds"""
 
-        while True:
-            if self.target_charge is not None:
-                observable_names += [self.target_charge_PV]
+        measurements = []
 
-            # remove duplicates
-            observable_names = list(set(observable_names))
+        for i in range(self.n_samples):
+            while True:
+                if self.target_charge is not None:
+                    observable_names += [self.target_charge_PV]
 
-            # if a screen measurement is involved
-            base_observable_names = [ele.split(":")[0] for ele in observable_names]
-            screen_name = "13ARV1"
+                # remove duplicates
+                observable_names = list(set(observable_names))
 
-            if screen_name in base_observable_names:
-                measurement = self.get_screen_measurement(
-                    screen_name, observable_names
-                )
-            else:
-                # otherwise do normal epics communication
-                measurement = self.interface.get_channels(observable_names)
+                # if a screen measurement is involved
+                base_observable_names = [ele.split(":")[0] for ele in observable_names]
+                screen_name = "13ARV1"
 
-            if self.target_charge is not None:
-                charge_value = measurement[self.target_charge_PV] * 1e9
-                if self.is_inside_charge_bounds(charge_value):
-                    break
+                if screen_name in base_observable_names:
+                    measurement = self.get_screen_measurement(
+                        screen_name, observable_names
+                    )
                 else:
-                    print(f"charge value {charge_value} is outside bounds")
-            else:
-                break
+                    # otherwise do normal epics communication
+                    measurement = self.interface.get_channels(observable_names)
 
-        return measurement
+                if self.target_charge is not None:
+                    charge_value = measurement[self.target_charge_PV] * 1e9
+                    if self.is_inside_charge_bounds(charge_value):
+                        break
+                    else:
+                        print(f"charge value {charge_value} is outside bounds")
+                else:
+                    break
+            measurements += [measurement]
+
+        def add_suffix(series, suffix):
+            vm = pd.Series([])
+            for k in series.keys():
+                vm[k + suffix] = series[k]
+            return vm
+
+        # create a dataframe
+        df = pd.DataFrame(measurements)
+        mean_results = add_suffix(df.mean(), "_mean")
+        std_results = add_suffix(df.std(), "_std")
+
+        return pd.concat([mean_results, std_results]).to_dict()
 
     def get_screen_measurement(self, screen_name, extra_pvs=None):
         # roi_readbacks = [
@@ -172,7 +188,7 @@ def get_beam_data(img, roi_data, threshold, visualize=True):
         ----------
         img : np.ndarray
             n x m image data
-        roi_data : List[str]
+        roi_data : np.ndarray
             list containing roi bounding box elements [x, y, width, height]
         threshold: int
             value to subtract from raw image, negative values after subtraction are
@@ -278,23 +294,3 @@ def calculate_stats(img):
     sy = (m02 / m00) ** 0.5
 
     return Cx, Cy, sx, sy
-
-
-def rectangle_union_area(llc1, s1, llc2, s2):
-    # Compute the intersection of the two rectangles
-    x1, y1 = llc1
-    x2, y2 = llc2
-    w1, h1 = s1
-    w2, h2 = s2
-    x_overlap = max(0, min(x1 + w1, x2 + w2) - max(x1, x2))
-    y_overlap = max(0, min(y1 + h1, y2 + h2) - max(y1, y2))
-    overlap_area = x_overlap * y_overlap
-
-    # Compute the areas of the two rectangles
-    rect1_area = w1 * h1
-    rect2_area = w2 * h2
-
-    # Compute the area of the union
-    union_area = rect1_area + rect2_area - overlap_area
-
-    return union_area
