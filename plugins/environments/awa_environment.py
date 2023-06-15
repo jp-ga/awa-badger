@@ -236,7 +236,8 @@ def get_beam_data(img, roi_data, threshold, visualize=True):
     distances = np.linalg.norm(pts - roi_c, axis=1)
 
     # subtract radius to get penalty value
-    bb_penalty = np.max(distances) - roi_radius        
+    bb_penalty = np.max(distances) - roi_radius 
+    log10_total_intensity = np.log10(total_intensity)
 
     results = {
         "Cx": cx,
@@ -244,13 +245,17 @@ def get_beam_data(img, roi_data, threshold, visualize=True):
         "Sx": sx,
         "Sy": sy,
         "bb_penalty": bb_penalty,
-        "total_intensity": total_intensity
+        "total_intensity": total_intensity,
+        "log10_total_intensity": log10_total_intensity
     }
     
     
-    if bb_penalty > 0 or total_intensity < 10000:
+    if bb_penalty > 0 or log10_total_intensity < 4:
         for name in ["Cx", "Cy", "Sx", "Sy"]:
             results[name] = None
+            
+    if log10_total_intensity < 4:
+        results["bb_penalty"] = None
 
     return results
 
