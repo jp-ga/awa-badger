@@ -1,5 +1,5 @@
 from typing import Dict, List, Optional
-
+import time
 import numpy as np
 import pandas as pd
 from scipy.ndimage import gaussian_filter
@@ -55,19 +55,21 @@ class AWAEnvironment(Environment):
         """make measurements until charge range is within bounds"""
 
         measurements = []
-
+        if self.target_charge is not None:
+            observable_names += [self.target_charge_PV]
+            
+        # if a screen measurement is involved
+        base_observable_names = [ele.split(":")[0] for ele in observable_names]
+        screen_name = "13ARV1"
+        
+        # remove duplicates
+        observable_names = list(set(observable_names))
+        
+        # remove names with screen name in it
+        observable_names = [ele for ele in observable_names if not screen_name in ele]
+            
         for i in range(self.n_samples):
             while True:
-                if self.target_charge is not None:
-                    observable_names += [self.target_charge_PV]
-
-                # remove duplicates
-                observable_names = list(set(observable_names))
-
-                # if a screen measurement is involved
-                base_observable_names = [ele.split(":")[0] for ele in observable_names]
-                screen_name = "13ARV1"
-
                 if screen_name in base_observable_names:
                     measurement = self.get_screen_measurement(
                         screen_name, observable_names
@@ -81,10 +83,12 @@ class AWAEnvironment(Environment):
                     if self.is_inside_charge_bounds(charge_value):
                         break
                     else:
-                        print(f"charge value {charge_value} is outside bounds")
+                        pass
+                        #print(f"charge value {charge_value} is outside bounds")
                 else:
                     break
             measurements += [measurement]
+            time.sleep(0.75)
 
         def add_suffix(series, suffix):
             vm = pd.Series([])
@@ -94,35 +98,13 @@ class AWAEnvironment(Environment):
 
         # create a dataframe
         df = pd.DataFrame(measurements)
-        mean_results = add_suffix(df.mean(), "_mean")
+        mean_results = df.mean()
         std_results = add_suffix(df.std(), "_std")
 
         return pd.concat([mean_results, std_results]).to_dict()
 
-    def get_screen_measurement(self, screen_name, extra_pvs=None):
-        # roi_readbacks = [
-        #    "ROI1:MinX_RBV",
-        #    "ROI1:MinY_RBV",
-        #    "ROI1:SizeX_RBV",
-        #    "ROI1:SizeY_RBV",
-        # ]
-
-        # centroid_readbacks = [
-        #    "Stats1:CentroidX_RBV",
-        #    "Stats1:CentroidY_RBV",
-        #    "Stats1:SigmaX_RBV",
-        #    "Stats1:SigmaY_RBV",
-        # ]
-
+    def get_screen_measurement(self, screen_name, extra_pvs=None, visualize=False):
         extra_pvs = extra_pvs or []
-
-        # construct list of all PVs necessary for measurement
-        # observation_pvs = [
-        #    f"{screen_name}:{pv_name}" for pv_name in roi_readbacks + centroid_readbacks
-        # ] + extra_pvs
-
-        # get rid of duplicate PVs
-        # observation_pvs = list(set(observation_pvs))
 
         # do measurement and sort data
         observation_pvs = [
@@ -139,10 +121,10 @@ class AWAEnvironment(Environment):
             measurement["13ARV1:image1:ArraySize1_RBV"],
             measurement["13ARV1:image1:ArraySize0_RBV"]
         )
-        roi_data = np.array((100, 200, 1000, 1000))
-        threshold = 200
+        roi_data = np.array((350, 700, 600, 600))
+        threshold = 400
 
-        beam_data = get_beam_data(img, roi_data, threshold, visualize=False)
+        beam_data = get_beam_data(img, roi_data, threshold, visualize=visualize)
         measurement.update(
             {f"{screen_name}:{name}": beam_data[name] for name in beam_data}
         )
