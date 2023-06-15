@@ -236,21 +236,19 @@ def get_beam_data(img, roi_data, threshold, visualize=True):
     distances = np.linalg.norm(pts - roi_c, axis=1)
 
     # subtract radius to get penalty value
-    penalty = np.max(distances) - roi_radius
-
-    # penalize no beam
-    if total_intensity < 10000:
-        penalty = np.linalg.norm(roi_c)
+    bb_penalty = np.max(distances) - roi_radius        
 
     results = {
         "Cx": cx,
         "Cy": cy,
         "Sx": sx,
         "Sy": sy,
-        "penalty": penalty,
+        "bb_penalty": bb_penalty,
+        "total_intensity": total_intensity
     }
-
-    if penalty > 0:
+    
+    
+    if bb_penalty > 0 or total_intensity < 10000:
         for name in ["Cx", "Cy", "Sx", "Sy"]:
             results[name] = None
 
