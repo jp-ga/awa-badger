@@ -122,7 +122,7 @@ class AWAEnvironment(Environment):
             measurement["13ARV1:image1:ArraySize0_RBV"]
         )
         roi_data = np.array((350, 700, 600, 600))
-        threshold = 400
+        threshold = 150
 
         beam_data = get_beam_data(img, roi_data, threshold, visualize=visualize)
         measurement.update(
