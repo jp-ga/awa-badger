@@ -250,11 +250,11 @@ def get_beam_data(img, roi_data, threshold, visualize=True):
     }
     
     
-    if bb_penalty > 0 or log10_total_intensity < 4:
+    if bb_penalty > 0 or log10_total_intensity < 5.5:
         for name in ["Cx", "Cy", "Sx", "Sy"]:
             results[name] = None
             
-    if log10_total_intensity < 4:
+    if log10_total_intensity < 5.5:
         results["bb_penalty"] = None
 
     return results

@@ -5,5 +5,5 @@ AWA:Bira3Ctrl:Ch03,-5,5,A,DQ4
 AWA:Bira3Ctrl:Ch04,-5,5,A,DQ5
 AWA:Bira3Ctrl:Ch05,-5,5,A,DQ6
 AWA:Bira3Ctrl:Ch06,-5,5,A,DQ7
-AWALLRF:K1:SetPhase,236,256,degrees,Gun phase
+AWALLRF:K1:SetPhase,339,359,degrees,Gun phase
 AWA:DAC0:Ch08,4.5,5.9,counts,Gun RF amplitude + K2
