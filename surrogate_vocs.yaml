@@ -19,7 +19,6 @@ constraints:
   numParticles: [GREATER_THAN, 259522.0]  # less than 1% loss
 objectives: {rms_xy in m: MINIMIZE}
 constants: {}
-linked_variables: {}
 
 # Defaults: 
 #   Imain: 230 A -> 230 A
