@@ -304,9 +304,9 @@ BEAM1: BEAM, PARTICLE = ELECTRON, pc = P0, NPART = n_particles,
 BFREQ = rf_freq * 1E-6, BCURRENT = beam_bunch_charge * rf_freq, CHARGE = -1;
 TRACK, LINE = AWA_Drivelinac, BEAM = BEAM1, MAXSTEPS = 10000000, 
 //DT   = {dTg, dTd, dTg, dTd, dTg, dTd, dTd, dTd, dTg, dTd, dTd, dTd,   dTd,   dTd,   dTd,   dTd,   dTd,   dTd,    dTd,     dTq,     dTd,     dTq,     dTd,     dTq,     dTd,    dTq,     dTd}, 
-//ZSTOP= {l1e, l2s, l2e, l3s, l3e, l4s, l4e, l5s, l5e, l6s, l6e, 12.35, 12.37, 12.54, 12.62, 12.78, 13.00, 13.165, 13.715 , 13.855 , 13.965 , 14.135 , 14.215 , 14.385 , 14.465 ,14.665 , 16.6798 } // DYG5 is at 16.6798 m.
+//ZSTOP= {l1e, l2s, l2e, l3s, l3e, l4s, l4e, l5s, l5e, l6s, l6e, 12.35, 12.37, 12.54, 12.62, 12.78, 13.00, 13.165, 13.715 , 13.855 , 13.965 , 14.135 , 14.215 , 14.385 , 14.465 ,14.665 , 17.9528 } // DYG5 is at 17.9528 m.
 DT   = {dTg, dTd,    dTq,    dTd, dTg, dTd, dTg, dTd,    dTq,    dTd, dTd, dTd, dTg, dTd,    dTq,    dTd, dTd, dTd,     dTq,     dTd,   dTd,   dTd,   dTd,   dTd,   dTd,   dTd,    dTd,     dTq,     dTd,     dTq,     dTd,     dTq,     dTd,    dTq,     dTd,     dTq,     dTd}, 
-ZSTOP= {l1e, 3.1145, 3.1345, l2s, l2e, l3s, l3e, 6.4225, 6.4425, l4s, l4e, l5s, l5e, 9.6632, 9.6832, l6s, l6e, 11.5458, 11.5658, 12.35, 12.37, 12.54, 12.62, 12.78, 13.00, 13.165, 13.715 , 13.855 , 13.965 , 14.135 , 14.215 , 14.385 , 14.465 ,14.665 , 15.1048, 15.1248, 16.6798 }; // DYG5 is at 16.6798 m.
+ZSTOP= {l1e, 3.1145, 3.1345, l2s, l2e, l3s, l3e, 6.4225, 6.4425, l4s, l4e, l5s, l5e, 9.6632, 9.6832, l6s, l6e, 11.5458, 11.5658, 12.35, 12.37, 12.54, 12.62, 12.78, 13.00, 13.165, 13.715 , 13.855 , 13.965 , 14.135 , 14.215 , 14.385 , 14.465 ,14.665 , 15.1048, 15.1248, 17.9528 }; // DYG5 is at 17.9528 m.
 RUN, METHOD = "PARALLEL-T", BEAM = BEAM1,
 FIELDSOLVER = FS_SC, DISTRIBUTION = DistFT;
 ENDTRACK;
