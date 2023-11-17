@@ -13,7 +13,7 @@ from epics import caget, caget_many, caput
 from matplotlib import patches, pyplot as plt
 from pydantic import BaseModel, PositiveFloat, PositiveInt
 
-from utils.fitting_methods import fit_gaussian_linear_background
+from plugins.interfaces.utils.fitting_methods import fit_gaussian_linear_background
 
 
 class ROI(BaseModel):
@@ -45,7 +45,7 @@ class EPICSImageDiagnostic(BaseModel):
     array_data_suffix: str = "Image:ArrayData"
     array_n_cols_suffix: str = "Image:ArraySize0_RBV"
     array_n_rows_suffix: str = "Image:ArraySize1_RBV"
-    resolution_suffix: str = "RESOLUTION"
+    resolution_suffix: Union[str, None] = "RESOLUTION"
     resolution: float = 1.0
     beam_shutter_pv: str = None
     extra_pvs: List[str] = []
@@ -143,7 +143,10 @@ class EPICSImageDiagnostic(BaseModel):
                 dset = hf.create_dataset("images", data=np.array(images))
                 for name, val in (outputs | kwargs | screen_stats).items():
                     if val is not None:
-                        dset.attrs[name] = val
+                        try:
+                            dset.attrs[name] = val
+                        except TypeError:
+                            dset.attrs[name] = str(val)
 
             outputs["save_filename"] = save_filename
 
@@ -185,7 +188,10 @@ class EPICSImageDiagnostic(BaseModel):
             img = np.zeros((2000, 2000))
             img[800:-800, 900:-900] = 1
             self.resolution = 1.0
-            extra_data = {"dummy": 1.0}
+            extra_data = {
+                "ICT1": np.random.randn() + 1.0,
+                "ICT2": np.random.randn() + 1.0
+            }
         else:
             img, nx, ny, self.resolution = caget_many(self.pv_names)
             extra_data = dict(zip(self.extra_pvs, caget_many(self.extra_pvs)))
