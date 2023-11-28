@@ -9,7 +9,7 @@ import h5py
 import numpy as np
 import pandas as pd
 import yaml
-from epics import caget, caget_many, caput
+from epics import PV
 from matplotlib import patches, pyplot as plt
 from pydantic import BaseModel, PositiveFloat, PositiveInt
 
@@ -64,8 +64,14 @@ class EPICSImageDiagnostic(BaseModel):
 
     testing: bool = False
 
-    class Config:
-        extra = "forbid"
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        # create PV objects
+        self._pvs = [
+            PV(name) for name in self.pv_names + self.extra_pvs
+        ]
+        self._shutter_pv_obj = PV(self.beam_shutter_pv)
 
     def measure_beamsize(self, n_shots: int = 1, fit_image=True, **kwargs):
         """
@@ -193,10 +199,12 @@ class EPICSImageDiagnostic(BaseModel):
                 "ICT2": np.random.randn() + 1.0
             }
         else:
-            img, nx, ny, self.resolution = caget_many(self.pv_names)
-            extra_data = dict(zip(self.extra_pvs, caget_many(self.extra_pvs)))
+            # get pvs
+            results = [ele.get() for ele in self._pvs]
+            img, nx, ny = results[0], results[1], results[2]
             img = img.reshape(ny, nx)
 
+            extra_data = dict(zip(self.extra_pvs, results[2:]))
         return img, extra_data
 
     def get_processed_image(self):
@@ -220,8 +228,8 @@ class EPICSImageDiagnostic(BaseModel):
         )
         # insert shutter
         if self.beam_shutter_pv is not None:
-            old_shutter_state = caget(self.beam_shutter_pv)
-            caput(self.beam_shutter_pv, 0)
+            old_shutter_state = self._shutter_pv_obj.get()
+            self._shutter_pv_obj.put(0)
             sleep(5.0)
 
         images = []
@@ -231,7 +239,7 @@ class EPICSImageDiagnostic(BaseModel):
 
         # restore shutter state
         if self.beam_shutter_pv is not None:
-            caput(self.beam_shutter_pv, old_shutter_state)
+            self._shutter_pv_obj.put(old_shutter_state)
 
         # return average
         images = np.stack(images)
