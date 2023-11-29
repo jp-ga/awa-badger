@@ -3,7 +3,7 @@ import os.path
 import time
 from copy import copy
 from time import sleep
-from typing import Union, List
+from typing import Union, List, Optional
 
 import h5py
 import numpy as np
@@ -62,6 +62,10 @@ class EPICSImageDiagnostic(BaseModel):
     return_statistics: bool = False
     threshold: float = 0.0
 
+    target_charge: Optional[PositiveFloat] = None
+    target_charge_pv: Optional[str] = None
+    charge_atol: Optional[PositiveFloat] = 0.1
+
     testing: bool = False
 
     def __init__(self, **kwargs):
@@ -71,7 +75,8 @@ class EPICSImageDiagnostic(BaseModel):
         self._pvs = [
             PV(name) for name in self.pv_names + self.extra_pvs
         ]
-        self._shutter_pv_obj = PV(self.beam_shutter_pv)
+        if self.beam_shutter_pv is not None:
+            self._shutter_pv_obj = PV(self.beam_shutter_pv)
 
     def measure_beamsize(self, n_shots: int = 1, fit_image=True, **kwargs):
         """
@@ -83,10 +88,28 @@ class EPICSImageDiagnostic(BaseModel):
         results = []
         images = []
         start_time = time.time()
-        for _ in range(n_shots):
+
+        while len(results) < n_shots:
 
             # get image and PV's at the same time
             img, extra_data = self.get_processed_image()
+
+            # check if charge measurement is inside window, if it is skip to another
+            # measurement
+            if self.target_charge is not None:
+                assert self.target_charge_pv is not None
+                charge_error = abs(
+                    extra_data[self.target_charge_pv] - self.target_charge
+                )
+                # add message, wait and continue
+                if charge_error > self.charge_atol:
+                    print(
+                        f"charge error {charge_error:.2} "
+                        f"outside atol {self.charge_atol}"
+                    )
+                    sleep(self.wait_time)
+                    continue
+
             if fit_image:
                 result = self.calculate_beamsize(img)
 
@@ -99,6 +122,7 @@ class EPICSImageDiagnostic(BaseModel):
 
             results += [result | extra_data]
             images += [img]
+
             sleep(self.wait_time)
 
         # combine data into a single dictionary output
@@ -195,8 +219,8 @@ class EPICSImageDiagnostic(BaseModel):
             img[800:-800, 900:-900] = 1
             self.resolution = 1.0
             extra_data = {
-                "ICT1": np.random.randn() + 1.0,
-                "ICT2": np.random.randn() + 1.0
+                "ICT1": np.random.randn()*0.1 + 1.0,
+                "ICT2": np.random.randn()*0.1 + 1.0
             }
         else:
             # get pvs
