@@ -42,9 +42,9 @@ class ROI(BaseModel):
 
 class EPICSImageDiagnostic(BaseModel):
     screen_name: str
-    array_data_suffix: str = "Image:ArrayData"
-    array_n_cols_suffix: str = "Image:ArraySize0_RBV"
-    array_n_rows_suffix: str = "Image:ArraySize1_RBV"
+    array_data_suffix: str = "image1:ArrayData"
+    array_n_cols_suffix: str = "image1:ArraySize0_RBV"
+    array_n_rows_suffix: str = "image1:ArraySize1_RBV"
     resolution_suffix: Union[str, None] = "RESOLUTION"
     resolution: float = 1.0
     beam_shutter_pv: str = None
@@ -282,6 +282,14 @@ class EPICSImageDiagnostic(BaseModel):
         img = img - self.threshold
         img = np.where(img >= 0, img, 0)
 
+        # visualize image
+        if self.visualize:
+            print("displaying image")
+            fig, ax = plt.subplots()
+            c = ax.imshow(img, origin="lower")
+            fig.colorbar(c)
+
+
         # if image is below min intensity threshold avoid fitting
         log10_total_intensity = np.log10(img.sum())
         if log10_total_intensity < self.min_log_intensity:
@@ -319,11 +327,8 @@ class EPICSImageDiagnostic(BaseModel):
 
                 # visualization
                 if self.visualize:
-                    fig, ax = plt.subplots()
-                    c = ax.imshow(img, origin="lower")
                     ax.plot(*centroid, "+r")
                     ax.plot(*roi_c[::-1], ".r")
-                    fig.colorbar(c)
 
                     rect = patches.Rectangle(
                         pts[0], *sizes * n_stds * 2.0, facecolor="none", edgecolor="r"
