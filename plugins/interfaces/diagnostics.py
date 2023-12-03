@@ -17,25 +17,28 @@ from plugins.interfaces.utils.fitting_methods import fit_gaussian_linear_backgro
 
 
 class ROI(BaseModel):
-    xmin: int
-    xmax: int
-    ymin: int
-    ymax: int
+    xcenter: int
+    ycenter: int
+    xwidth: int
+    ywidth: int
 
     @property
     def bounding_box(self):
-        return [self.xmin, self.xmax, self.xmax - self.xmin, self.ymax - self.ymin]
+        return [self.xcenter - int(self.xwidth/2),
+                self.ycenter - int(self.ywidth/2),
+                self.xwidth, self.ywidth]
 
     def crop_image(self, img):
         x_size, y_size = img.shape
 
-        if self.xmax > x_size or self.ymax > y_size:
+        if self.xwidth > x_size or self.ywidth > y_size:
             raise ValueError(
                 f"must specify ROI that is smaller than the image, "
                 f"image size is {img.shape}"
             )
 
-        img = img[self.xmin : self.xmax, self.ymin : self.ymax]
+        bbox = self.bounding_box
+        img = img[bbox[0]: bbox[0] + bbox[2], bbox[1]: bbox[1] + bbox[3]]
 
         return img
 
