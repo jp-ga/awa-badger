@@ -12,7 +12,7 @@ import yaml
 from epics import PV
 from matplotlib import patches, pyplot as plt
 from pydantic import BaseModel, PositiveFloat, PositiveInt
-
+from epics import caget_many
 from plugins.interfaces.utils.fitting_methods import fit_gaussian_linear_background
 
 
@@ -76,7 +76,7 @@ class EPICSImageDiagnostic(BaseModel):
 
         # create PV objects
         self._pvs = [
-            PV(name) for name in self.pv_names + self.extra_pvs
+            PV(name) for name in self.pv_names
         ]
         if self.beam_shutter_pv is not None:
             self._shutter_pv_obj = PV(self.beam_shutter_pv)
@@ -104,6 +104,7 @@ class EPICSImageDiagnostic(BaseModel):
                 charge_error = abs(
                     extra_data[self.target_charge_pv] - self.target_charge
                 )
+                print(charge_error)
                 # add message, wait and continue
                 if charge_error > self.charge_atol:
                     print(
@@ -228,10 +229,12 @@ class EPICSImageDiagnostic(BaseModel):
         else:
             # get pvs
             results = [ele.get() for ele in self._pvs]
+            extra_data = dict(zip(
+                self.extra_pvs, caget_many(self.extra_pvs)
+            ))
             img, nx, ny = results[0], results[1], results[2]
             img = img.reshape(ny, nx)
 
-            extra_data = dict(zip(self.extra_pvs, results[2:]))
         return img, extra_data
 
     def get_processed_image(self):
@@ -261,7 +264,7 @@ class EPICSImageDiagnostic(BaseModel):
 
         images = []
         for i in range(n_measurements):
-            images += [self.get_raw_image()]
+            images += [self.get_raw_data()[0]]
             sleep(self.wait_time)
 
         # restore shutter state

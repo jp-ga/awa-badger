@@ -59,7 +59,7 @@ def fit_gaussian_linear_background(y, inital_guess=None, visualize=True, n_resta
 
     # use weighted mean and rms to guess
     center = inital_guess.pop("mu", pk_loc)
-    sigma = inital_guess.pop("sigma", y.shape[0] / 5)
+    sigma = inital_guess.pop("sigma", y.shape[0] / 2)
 
     para0 = torch.tensor([amplitude, center, sigma, offset])
 
@@ -74,8 +74,8 @@ def fit_gaussian_linear_background(y, inital_guess=None, visualize=True, n_resta
 
     bounds = torch.tensor(
         (
-            (pk_value / 2.0, max(center - width / 4, 0), sigma_min, -1000.0),
-            (pk_value * 1.5, min(center + width / 4, width), width, 1000.0),
+            (pk_value / 2.0, max(center - width / 4, 0), sigma_min, -500000.0),
+            (pk_value * 1.5, min(center + width / 4, width), width, 500000.0),
         )
     )
 
@@ -111,7 +111,7 @@ def fit_gaussian_linear_background(y, inital_guess=None, visualize=True, n_resta
     indiv_condition = torch.stack((
         candidates[:, -2] > sigma_min * 1.1, 
         candidates[:, -2] < width / 1.5,
-        candidates[:, 0] > 100))
+        candidates[:, 0] > 150000))
     # print(indiv_condition)
     
     condition = torch.all(indiv_condition,dim=0)
