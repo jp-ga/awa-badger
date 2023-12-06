@@ -43,8 +43,11 @@ class ROI(BaseModel):
         return img
 
 
-class EPICSImageDiagnostic(BaseModel):
+class AWAEPICSImageDiagnostic(BaseModel):
     screen_name: str
+    ip_address: str
+
+    alias: Optional[str] = None
     array_data_suffix: str = "image1:ArrayData"
     array_n_cols_suffix: str = "image1:ArraySize0_RBV"
     array_n_rows_suffix: str = "image1:ArraySize1_RBV"
@@ -62,6 +65,7 @@ class EPICSImageDiagnostic(BaseModel):
     wait_time: PositiveFloat = 1.0
     n_fitting_restarts: PositiveInt = 1
     visualize: bool = True
+    verbose: bool = True
     return_statistics: bool = False
     threshold: float = 0.0
 
@@ -104,13 +108,13 @@ class EPICSImageDiagnostic(BaseModel):
                 charge_error = abs(
                     extra_data[self.target_charge_pv] - self.target_charge
                 )
-                print(charge_error)
                 # add message, wait and continue
                 if charge_error > self.charge_atol:
-                    print(
-                        f"charge error {charge_error:.2} "
-                        f"outside atol {self.charge_atol}"
-                    )
+                    if self.verbose:
+                        print(
+                            f"charge error {charge_error:.2} "
+                            f"outside atol {self.charge_atol}"
+                        )
                     sleep(self.wait_time)
                     continue
 
@@ -168,9 +172,12 @@ class EPICSImageDiagnostic(BaseModel):
 
         # if specified, save image data to location based on time stamp
         if self.save_image_location is not None:
-            screen_name = self.screen_name.replace(":", "_")
+            if self.alias is not None:
+                name = self.alias
+            else:
+                name = self.screen_name.replace(":", "_")
             save_filename = os.path.join(
-                self.save_image_location, f"{screen_name}_{int(start_time)}.h5"
+                self.save_image_location, f"{name}_{int(start_time)}.h5"
             )
             screen_stats = json.loads(self.model_dump_json())
             with h5py.File(save_filename, "w") as hf:
@@ -217,6 +224,8 @@ class EPICSImageDiagnostic(BaseModel):
         else:
             return 0.0
 
+    
+
     def get_raw_data(self) -> (np.ndarray, dict):
         if self.testing:
             img = np.zeros((2000, 2000))
@@ -229,11 +238,18 @@ class EPICSImageDiagnostic(BaseModel):
         else:
             # get pvs
             results = [ele.get() for ele in self._pvs]
-            extra_data = dict(zip(
-                self.extra_pvs, caget_many(self.extra_pvs)
-            ))
+
+            e_pvs = self.extra_pvs
+            if self.target_charge_pv is not None:
+                e_pvs += [self.target_charge_pv]
+            extra_data = dict(zip(e_pvs, caget_many(e_pvs)))
             img, nx, ny = results[0], results[1], results[2]
             img = img.reshape(ny, nx)
+
+            ######################
+            # FOR AWA replace zeros (saturated vals) with max values
+            ######################
+            img[img == 0.0] = np.max(img)
 
         return img, extra_data
 
@@ -253,9 +269,12 @@ class EPICSImageDiagnostic(BaseModel):
     def measure_background(self, n_measurements: int = 5, file_location: str = None):
         file_location = file_location or ""
 
-        filename = os.path.join(
-            file_location, f"{self.screen_name}_background.npy".replace(":", "_")
-        )
+        if self.alias is not None:
+            name = self.alias
+        else:
+            name = self.screen_name.replace(":", "_")
+
+        filename = os.path.join(file_location, f"{name}_background.npy")
         # insert shutter
         if self.beam_shutter_pv is not None:
             old_shutter_state = self._shutter_pv_obj.get()
