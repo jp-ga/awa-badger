@@ -237,19 +237,15 @@ class AWAEPICSImageDiagnostic(BaseModel):
             }
         else:
             # get pvs
-            results = [ele.get() for ele in self._pvs]
+            results = caget_many(self.pv_names)
+            results[0] = np.uint16(results[0])
 
-            e_pvs = self.extra_pvs
+            e_pvs = copy(self.extra_pvs)
             if self.target_charge_pv is not None:
                 e_pvs += [self.target_charge_pv]
             extra_data = dict(zip(e_pvs, caget_many(e_pvs)))
             img, nx, ny = results[0], results[1], results[2]
             img = img.reshape(ny, nx)
-
-            ######################
-            # FOR AWA replace zeros (saturated vals) with max values
-            ######################
-            img[img == 0.0] = np.max(img)
 
         return img, extra_data
 
@@ -267,7 +263,8 @@ class AWAEPICSImageDiagnostic(BaseModel):
         return img, extra_data
 
     def measure_background(self, n_measurements: int = 5, file_location: str = None):
-        file_location = file_location or ""
+        loc = copy(self.save_image_location)
+        file_location = file_location or loc
 
         if self.alias is not None:
             name = self.alias

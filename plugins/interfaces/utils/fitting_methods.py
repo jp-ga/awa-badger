@@ -127,7 +127,7 @@ def fit_gaussian_linear_background(y, inital_guess=None, visualize=True, n_resta
     indiv_condition = torch.stack((
         candidates[:, -2] > sigma_min * 1.1, 
         candidates[:, -2] < width / 1.5,
-        candidates[:, 0] > 0.25))
+        candidates[:, 0] > 0.1))
     # print(indiv_condition)
     
     condition = torch.all(indiv_condition,dim=0)
