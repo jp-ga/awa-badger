@@ -108,6 +108,7 @@ class AWAEPICSImageDiagnostic(BaseModel):
                 charge_error = abs(
                     extra_data[self.target_charge_pv] - self.target_charge
                 )
+                print(f"measured charge:  {extra_data[self.target_charge_pv]}")
                 # add message, wait and continue
                 if charge_error > self.charge_atol:
                     if self.verbose:
