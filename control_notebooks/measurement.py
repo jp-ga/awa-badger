@@ -10,12 +10,20 @@ screen_name = "13ARV1"
 TESTING = False
 DYG14_IP = "192.168.2.111"
 DYG15_IP = "192.168.2.139"
+DYG7_IP = "192.168.2.106" # rad hard camera on DYG7
 
 OPTIONS = dict(
     n_fitting_results=60,
     target_charge=1.2e-9,
     target_charge_pv="AWAVXI11ICT:Ch4",
     charge_atol=0.1e-9,
+)
+
+DYG7_ROI = ROI(
+    xcenter = 605,
+    ycenter = 548,
+    xwidth = 700,
+    ywidth = 700
 )
 
 DYG14_ROI = ROI(
@@ -38,6 +46,7 @@ def get_DYG14():
         alias="DYG14",
         resolution_suffix=None,
         roi=DYG14_ROI,
+        gain=5.0,
         **OPTIONS
     )
 
@@ -48,6 +57,18 @@ def get_DYG15():
         alias="DYG15",
         resolution_suffix=None,
         roi=DYG15_ROI,
+        gain=15.0,
+        **OPTIONS
+    )
+
+def get_DYG7():
+    return AWAEPICSImageDiagnostic(
+        screen_name=screen_name,
+        ip_address=DYG7_IP,
+        alias="DYG7",
+        resolution_suffix=None,
+        roi=DYG7_ROI,
+        gain=16.0,
         **OPTIONS
     )
 
@@ -68,14 +89,7 @@ def set_camera(diagnostic, testing=False):
             # set the gain
             # start the new camera
             print(f"setting gain")
-    
-            if diagnostic.alias == "DYG14":
-                caput("13ARV1:cam1:Gain", 5.0)
-            elif diagnostic.alias == "DYG15":
-                caput("13ARV1:cam1:Gain", 15.0)
-            else:
-                raise RuntimeError()
-                
+            caput("13ARV1:cam1:Gain", diagnostic.gain)
             time.sleep(2)
     
             # start the new camera

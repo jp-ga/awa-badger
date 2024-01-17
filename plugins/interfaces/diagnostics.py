@@ -59,6 +59,7 @@ class AWAEPICSImageDiagnostic(BaseModel):
     background_file: str = None
     save_image_location: Union[str, None] = None
     roi: ROI = None
+    gain: PositiveFloat = 1.0
 
     min_log_intensity: float = 4.0
     bounding_box_half_width: PositiveFloat = 3.0
