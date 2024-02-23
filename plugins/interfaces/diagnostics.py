@@ -69,6 +69,7 @@ class AWAEPICSImageDiagnostic(BaseModel):
     verbose: bool = True
     return_statistics: bool = False
     threshold: float = 0.0
+    apply_bounding_box_constraint: bool = True
 
     target_charge: Optional[PositiveFloat] = None
     target_charge_pv: Optional[str] = None
@@ -313,7 +314,6 @@ class AWAEPICSImageDiagnostic(BaseModel):
             c = ax.imshow(img, origin="lower")
             fig.colorbar(c)
 
-
         # if image is below min intensity threshold avoid fitting
         log10_total_intensity = np.log10(img.sum())
         if log10_total_intensity < self.min_log_intensity:
@@ -381,8 +381,9 @@ class AWAEPICSImageDiagnostic(BaseModel):
                     "log10_total_intensity": log10_total_intensity,
                 }
 
-                # set results to none if the beam extends beyond the roi
-                if bb_penalty > 0:
+                # set results to none if the beam extends beyond the roi and the
+                # bounding box constraint is active
+                if bb_penalty > 0 and self.apply_bounding_box_constraint:
                     for name in ["Cx", "Cy", "Sx", "Sy"]:
                         result[name] = np.NaN
 
