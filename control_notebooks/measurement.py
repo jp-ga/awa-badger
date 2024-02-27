@@ -46,7 +46,7 @@ def get_DYG14():
         alias="DYG14",
         resolution_suffix=None,
         roi=DYG14_ROI,
-        gain=5.0,
+        gain=1.0, # 1.0 for 5 nC 5.0 for 1 nC,
         **OPTIONS
     )
 
@@ -103,7 +103,7 @@ def set_camera(diagnostic, testing=False):
             print(f"starting acquisition")
             caput("13ARV1:cam1:Acquire", 1)
 
-def set_background(diagnostic):
+def set_background(diagnostic, skip_test_measurement=False):
     set_camera(diagnostic)
     print("please shutter beam")
     input()
@@ -114,6 +114,7 @@ def set_background(diagnostic):
     
     plt.imshow(diagnostic.background_image)
     print(f"background file: {diagnostic.background_file}")
-    diagnostic.test_measurement()
+    if not skip_test_measurement:
+        diagnostic.test_measurement()
 
     return diagnostic
