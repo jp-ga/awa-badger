@@ -4,6 +4,7 @@ import time
 from copy import copy
 from time import sleep
 from typing import Union, List, Optional
+from pprint import pprint
 
 import h5py
 import numpy as np
@@ -349,7 +350,7 @@ class AWAEPICSImageDiagnostic(BaseModel):
                     )
                 )
                 roi_c = np.array([self.roi.xcenter, self.roi.ycenter])
-                roi_radius = self.roi.xwidth
+                roi_radius = self.roi.xwidth / 2
                 
                 # visualization
                 if self.visualize:
@@ -357,19 +358,37 @@ class AWAEPICSImageDiagnostic(BaseModel):
                     ax[0].plot(*roi_c, ".r")
 
                     rect = patches.Rectangle(
-                        pts[0], *sizes * n_stds * 2.0, facecolor="none", edgecolor="r"
+                        pts[0], 
+                        *sizes * n_stds * 2.0, 
+                        facecolor="none", edgecolor="r"
                     )
                     ax[1].add_patch(rect)
 
                     # plot bounding circle
                     circle = patches.Circle(
-                        roi_c, self.roi.xwidth/2, facecolor="none", edgecolor="r"
+                        roi_c, self.roi.xwidth/2,
+                        facecolor="none", edgecolor="r"
                     )
                     ax[0].add_patch(circle)
+
+                    circle2 = patches.Circle(
+                        (
+                            self.roi.xwidth/2,
+                            self.roi.xwidth/2
+                        ), 
+                        self.roi.xwidth/2,
+                        facecolor="none", edgecolor="r"
+                    )
+                    ax[1].add_patch(circle2)
                     
-
-                distances = np.linalg.norm(pts - roi_c, axis=1)
-
+                temp = pts - np.array((
+                        self.roi.xwidth/2,
+                        self.roi.xwidth/2
+                    ))
+                distances = np.linalg.norm(
+                    temp,
+                    axis=1
+                )
                 # subtract radius to get penalty value
                 bb_penalty = np.max(distances) - roi_radius
 
@@ -401,6 +420,9 @@ class AWAEPICSImageDiagnostic(BaseModel):
                     "total_intensity": fits["total_intensity"],
                     "log10_total_intensity": log10_total_intensity,
                 }
+
+            if self.visualize:
+                pprint(result)
 
             return result
 
