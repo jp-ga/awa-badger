@@ -1,0 +1,85 @@
+DT1H:
+  PV: AWA:Drive:DT1H_A_N:Ctrl
+  RANGE:
+  - -2.0
+  - 2.0
+DT1V:
+  PV: AWA:Drive:DT1V_A_N:Ctrl
+  RANGE:
+  - -2.0
+  - 2.0
+DT2H:
+  PV: AWA:Drive:DT2H_A_N:Ctrl
+  RANGE:
+  - -2.0
+  - 2.0
+DT2V:
+  PV: AWA:Drive:DT2V_A_N:Ctrl
+  RANGE:
+  - -2.0
+  - 2.0
+DT3H:
+  PV: AWA:Drive:DT3H_A_N:Ctrl
+  RANGE:
+  - -2.0
+  - 2.0
+DT3V:
+  PV: AWA:Drive:DT3V_A_N:Ctrl
+  RANGE:
+  - -2.0
+  - 2.0
+DT4H:
+  PV: AWA:Drive:DT4H_A_N:Ctrl
+  RANGE:
+  - -2.0
+  - 2.0
+DT4V:
+  PV: AWA:Drive:DT4V_A_N:Ctrl
+  RANGE:
+  - -2.0
+  - 2.0
+DT5H:
+  PV: AWA:Drive:DT5H_A_N:Ctrl
+  RANGE:
+  - -2.0
+  - 2.0
+DT5V:
+  PV: AWA:Drive:DT5V_A_N:Ctrl
+  RANGE:
+  - -2.0
+  - 2.0
+DT6H:
+  PV: AWA:Drive:DT6H_A_N:Ctrl
+  RANGE:
+  - -2.0
+  - 2.0
+DT6V:
+  PV: AWA:Drive:DT6V_A_N:Ctrl
+  RANGE:
+  - -2.0
+  - 2.0
+DT7H:
+  PV: AWA:Drive:DT7H_B_S:Ctrl
+  RANGE:
+  - -2.0
+  - 2.0
+DT7V:
+  PV: AWA:Drive:DT7V_B_S:Ctrl
+  RANGE:
+  - -2.0
+  - 2.0
+DT8H:
+  PV: AWA:Drive:DT8H_B_S:Ctrl
+  RANGE:
+  - -2.0
+  - 2.0
+DT8V:
+  PV: AWA:Drive:DT8V_B_S:Ctrl
+  RANGE:
+  - -2.0
+  - 2.0
+DQ4:
+  PV: AWA:Bira3Ctrl:Ch03
+  RANGE:
+  - -1.0
+  - 1.0

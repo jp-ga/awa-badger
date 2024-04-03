@@ -4,6 +4,7 @@ import time
 from copy import copy
 from time import sleep
 from typing import Union, List, Optional
+from pprint import pprint
 
 import h5py
 import numpy as np
@@ -59,6 +60,7 @@ class AWAEPICSImageDiagnostic(BaseModel):
     background_file: str = None
     save_image_location: Union[str, None] = None
     roi: ROI = None
+    gain: PositiveFloat = 1.0
 
     min_log_intensity: float = 4.0
     bounding_box_half_width: PositiveFloat = 3.0
@@ -68,6 +70,7 @@ class AWAEPICSImageDiagnostic(BaseModel):
     verbose: bool = True
     return_statistics: bool = False
     threshold: float = 0.0
+    apply_bounding_box_constraint: bool = True
 
     target_charge: Optional[PositiveFloat] = None
     target_charge_pv: Optional[str] = None
@@ -99,7 +102,7 @@ class AWAEPICSImageDiagnostic(BaseModel):
         while len(results) < n_shots:
 
             # get image and PV's at the same time
-            img, extra_data = self.get_processed_image()
+            img, extra_data, raw_img = self.get_processed_image()
 
             # check if charge measurement is inside window, if it is skip to another
             # measurement
@@ -108,6 +111,7 @@ class AWAEPICSImageDiagnostic(BaseModel):
                 charge_error = abs(
                     extra_data[self.target_charge_pv] - self.target_charge
                 )
+                print(f"measured charge:  {extra_data[self.target_charge_pv]}")
                 # add message, wait and continue
                 if charge_error > self.charge_atol:
                     if self.verbose:
@@ -119,7 +123,7 @@ class AWAEPICSImageDiagnostic(BaseModel):
                     continue
 
             if fit_image:
-                result = self.calculate_beamsize(img)
+                result = self.calculate_beamsize(img, raw_img)
 
                 # convert beam size results to microns
                 if result["Sx"] is not None:
@@ -250,7 +254,8 @@ class AWAEPICSImageDiagnostic(BaseModel):
         return img, extra_data
 
     def get_processed_image(self):
-        img, extra_data = self.get_raw_data()
+        raw_img, extra_data = self.get_raw_data()
+        img = copy(raw_img)
 
         # subtract background
         img = img - self.background_image
@@ -258,9 +263,9 @@ class AWAEPICSImageDiagnostic(BaseModel):
 
         # crop image if specified
         if self.roi is not None:
-            img = self.roi.crop_image(img)
+            img = self.roi.crop_image(img.T).T
 
-        return img, extra_data
+        return img, extra_data, raw_img
 
     def measure_background(self, n_measurements: int = 5, file_location: str = None):
         loc = copy(self.save_image_location)
@@ -296,10 +301,7 @@ class AWAEPICSImageDiagnostic(BaseModel):
 
         return mean
 
-    def calculate_beamsize(self, img):
-        roi_c = np.array(img.shape) / 2
-        roi_radius = np.min((roi_c * 2, np.array(img.shape))) / 2
-
+    def calculate_beamsize(self, img, raw_img):
         # apply threshold
         img = img - self.threshold
         img = np.where(img >= 0, img, 0)
@@ -307,10 +309,11 @@ class AWAEPICSImageDiagnostic(BaseModel):
         # visualize image
         if self.visualize:
             print("displaying image")
-            fig, ax = plt.subplots()
-            c = ax.imshow(img, origin="lower")
-            fig.colorbar(c)
+            fig, ax = plt.subplots(2,1)
+            c = ax[0].imshow(raw_img, origin="lower")
+            ax[1].imshow(img, origin="lower")
 
+            fig.colorbar(c)
 
         # if image is below min intensity threshold avoid fitting
         log10_total_intensity = np.log10(img.sum())
@@ -346,24 +349,46 @@ class AWAEPICSImageDiagnostic(BaseModel):
                         centroid + n_stds * sizes * np.array((-1, 1)),
                     )
                 )
-
+                roi_c = np.array([self.roi.xcenter, self.roi.ycenter])
+                roi_radius = self.roi.xwidth / 2
+                
                 # visualization
                 if self.visualize:
-                    ax.plot(*centroid, "+r")
-                    ax.plot(*roi_c[::-1], ".r")
+                    ax[1].plot(*centroid, "+r")
+                    ax[0].plot(*roi_c, ".r")
 
                     rect = patches.Rectangle(
-                        pts[0], *sizes * n_stds * 2.0, facecolor="none", edgecolor="r"
+                        pts[0], 
+                        *sizes * n_stds * 2.0, 
+                        facecolor="none", edgecolor="r"
                     )
-                    ax.add_patch(rect)
+                    ax[1].add_patch(rect)
 
+                    # plot bounding circle
                     circle = patches.Circle(
-                        roi_c[::-1], roi_radius, facecolor="none", edgecolor="r"
+                        roi_c, self.roi.xwidth/2,
+                        facecolor="none", edgecolor="r"
                     )
-                    ax.add_patch(circle)
+                    ax[0].add_patch(circle)
 
-                distances = np.linalg.norm(pts - roi_c, axis=1)
-
+                    circle2 = patches.Circle(
+                        (
+                            self.roi.xwidth/2,
+                            self.roi.xwidth/2
+                        ), 
+                        self.roi.xwidth/2,
+                        facecolor="none", edgecolor="r"
+                    )
+                    ax[1].add_patch(circle2)
+                    
+                temp = pts - np.array((
+                        self.roi.xwidth/2,
+                        self.roi.xwidth/2
+                    ))
+                distances = np.linalg.norm(
+                    temp,
+                    axis=1
+                )
                 # subtract radius to get penalty value
                 bb_penalty = np.max(distances) - roi_radius
 
@@ -379,8 +404,9 @@ class AWAEPICSImageDiagnostic(BaseModel):
                     "log10_total_intensity": log10_total_intensity,
                 }
 
-                # set results to none if the beam extends beyond the roi
-                if bb_penalty > 0:
+                # set results to none if the beam extends beyond the roi and the
+                # bounding box constraint is active
+                if bb_penalty > 0 and self.apply_bounding_box_constraint:
                     for name in ["Cx", "Cy", "Sx", "Sy"]:
                         result[name] = np.NaN
 
@@ -394,6 +420,9 @@ class AWAEPICSImageDiagnostic(BaseModel):
                     "total_intensity": fits["total_intensity"],
                     "log10_total_intensity": log10_total_intensity,
                 }
+
+            if self.visualize:
+                pprint(result)
 
             return result
 
@@ -427,3 +456,39 @@ class AWAEPICSImageDiagnostic(BaseModel):
         output = json.loads(self.json())
         with open(fname, "w") as f:
             yaml.dump(output, f)
+
+
+class AWAFrameGrabberDiagnostic(AWAEPICSImageDiagnostic):
+    screen_name: str = "AWANIFrameGrabber"
+    ip_address: str = "N/A"
+    array_data_suffix: str = "N/A"
+    array_n_cols_suffix: str = "N/A"
+    array_n_rows_suffix: str = "N/A"
+    resolution_suffix: Union[str, None] = None
+
+
+    @property
+    def pv_names(self) -> list:
+        return ["AWANIFG:ImgData"]
+
+
+    def get_raw_data(self) -> (np.ndarray, dict):
+        if self.testing:
+            img = np.zeros((2000, 2000))
+            img[800:-800, 900:-900] = 1
+            self.resolution = 1.0
+            extra_data = {
+                "ICT1": np.random.randn()*0.1 + 1.0,
+                "ICT2": np.random.randn()*0.1 + 1.0
+            }
+        else:
+            # get pvs
+            results = caget_many(self.pv_names)
+            e_pvs = copy(self.extra_pvs)
+            if self.target_charge_pv is not None:
+                e_pvs += [self.target_charge_pv]
+            extra_data = dict(zip(e_pvs, caget_many(e_pvs)))
+            img = results[0]
+            img = img.reshape(480, 640)
+
+        return img, extra_data
