@@ -1,0 +1,111 @@
+DYG1:
+    type: frame_grabber
+    center:
+    - 385.45575812712497 
+    - 341.2049757974379
+    radius: 216.2935562405216
+    video_number: 1
+
+DYG2:
+    type: frame_grabber
+    center:
+    - 341.66922585201127
+    - 258.71475329147165
+    radius: 200.7457936260543
+    video_number: 2
+
+DYG3:
+    type: frame_grabber
+    center:
+    - 269.60083248877334
+    - 251.55576493685035
+    radius: 202.62023172988742
+    video_number: 3
+DYG4:
+    type: frame_grabber
+    center:
+    - 262.99885381276744
+    - 174.20259555299614
+    radius: 207.39052958298012
+    video_number: 4
+DYG5:
+    type: frame_grabber
+    center:
+    - 293.6070723016849
+    - 248.12799438794332
+    radius: 206.9578032921999
+    video_number: 5
+
+DYG7:
+    type: blackfly
+    center:
+    - 605
+    - 548
+    radius: 350
+    ip_address: 192.168.2.106
+DYG14:
+    type: blackfly
+    center:
+    - 556
+    - 806
+    radius: 350
+    ip_address: 192.168.2.111
+    gain: 1.0
+DYG15:
+    type: blackfly
+    center:
+    - 591
+    - 1079
+    radius: 350
+    ip_address: 192.168.2.111  
+    gain: 1.0
+EYG1:
+    type: frame_grabber
+    center:
+    - 435.9116846759745
+    - 236.28324426878643
+    radius: 209.41506903499106
+    video_number: 32
+EYG2:
+    type: frame_grabber
+    center:
+    - 405.09845964031575
+    - 319.59460659741086
+    radius: 221.67209815834167
+    video_number: 22
+YAGPerm:
+    type: frame_grabber
+    center:
+    - 268.1326157424708
+    - 235.06750450248902
+    radius: 240.31372586317883
+    video_number: 30
+EYG3:
+    type: frame_grabber
+    center:
+    - 334.42320707621707
+    - 230.1253378326309
+    radius: 156.09735456504865
+    video_number: 28
+DYG6:
+    type: frame_grabber
+    center:
+    - 348.9857434881227
+    - 237.18732942820998
+    radius: 196.96246822924843
+    video_number: 36
+Slit_YAG:
+    type: frame_grabber
+    center:
+    - 230.6743282995433
+    - 228.71935159087047
+    radius: 173.02994558695784
+    video_number: 29
+WYG8:
+    type: blackfly
+    center:
+    - 591
+    - 1079
+    radius: 350
+    ip_address: 192.168.2.111  
+    gain: 1.0

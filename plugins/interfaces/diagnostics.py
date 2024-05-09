@@ -13,7 +13,7 @@ import yaml
 from epics import PV
 from matplotlib import patches, pyplot as plt
 from pydantic import BaseModel, PositiveFloat, PositiveInt
-from epics import caget_many
+from epics import caget_many, caput, caget
 from plugins.interfaces.utils.fitting_methods import fit_gaussian_linear_background
 
 
@@ -46,7 +46,6 @@ class ROI(BaseModel):
 
 class AWAEPICSImageDiagnostic(BaseModel):
     screen_name: str
-    ip_address: str
 
     alias: Optional[str] = None
     array_data_suffix: str = "image1:ArrayData"
@@ -60,13 +59,12 @@ class AWAEPICSImageDiagnostic(BaseModel):
     background_file: str = None
     save_image_location: Union[str, None] = None
     roi: ROI = None
-    gain: PositiveFloat = 1.0
 
     min_log_intensity: float = 4.0
     bounding_box_half_width: PositiveFloat = 3.0
     wait_time: PositiveFloat = 1.0
     n_fitting_restarts: PositiveInt = 1
-    visualize: bool = True
+    visualize: bool = False
     verbose: bool = True
     return_statistics: bool = False
     threshold: float = 0.0
@@ -228,31 +226,6 @@ class AWAEPICSImageDiagnostic(BaseModel):
         else:
             return 0.0
 
-    
-
-    def get_raw_data(self) -> (np.ndarray, dict):
-        if self.testing:
-            img = np.zeros((2000, 2000))
-            img[800:-800, 900:-900] = 1
-            self.resolution = 1.0
-            extra_data = {
-                "ICT1": np.random.randn()*0.1 + 1.0,
-                "ICT2": np.random.randn()*0.1 + 1.0
-            }
-        else:
-            # get pvs
-            results = caget_many(self.pv_names)
-            results[0] = np.uint16(results[0])
-
-            e_pvs = copy(self.extra_pvs)
-            if self.target_charge_pv is not None:
-                e_pvs += [self.target_charge_pv]
-            extra_data = dict(zip(e_pvs, caget_many(e_pvs)))
-            img, nx, ny = results[0], results[1], results[2]
-            img = img.reshape(ny, nx)
-
-        return img, extra_data
-
     def get_processed_image(self):
         raw_img, extra_data = self.get_raw_data()
         img = copy(raw_img)
@@ -277,17 +250,17 @@ class AWAEPICSImageDiagnostic(BaseModel):
             name = self.screen_name.replace(":", "_")
 
         filename = os.path.join(file_location, f"{name}_background.npy")
-        # insert shutter
-        if self.beam_shutter_pv is not None:
-            old_shutter_state = self._shutter_pv_obj.get()
-            self._shutter_pv_obj.put(0)
-            sleep(5.0)
 
+        print("please shutter beam")
+        input()
         images = []
         for i in range(n_measurements):
             images += [self.get_raw_data()[0]]
             sleep(self.wait_time)
-
+            
+        print("please un-shutter beam")
+        input()
+                
         # restore shutter state
         if self.beam_shutter_pv is not None:
             self._shutter_pv_obj.put(old_shutter_state)
@@ -455,22 +428,85 @@ class AWAEPICSImageDiagnostic(BaseModel):
         """dump data to file"""
         output = json.loads(self.json())
         with open(fname, "w") as f:
-            yaml.dump(output, f)
+            yaml.dump(output, f)        
+
+class AWABlackflyDiagnostic(AWAEPICSImageDiagnostic):
+    ip_address: str
+    gain: PositiveFloat = 1.0
+
+    def set_camera(self):
+        print(f"setting camera {self.alias}")
+        caput("13ARV1:cam1:Acquire", 0)
+        time.sleep(2)
+
+        print(str(caget("13ARV1:cam1:GC_SetCameraName")))
+        current_ip = str(caget("13ARV1:cam1:GC_SetCameraName"))
+        if not current_ip == self.ip_address:
+            # set the new camera IP address
+            print(f"setting IP address {self.ip_address}")
+            caput("13ARV1:cam1:GC_SetCameraName", self.ip_address)
+            time.sleep(2)
+    
+            # set the gain
+            # start the new camera
+            print(f"setting gain")
+            caput("13ARV1:cam1:Gain", self.gain)
+            time.sleep(2)
+    
+            # start the new camera
+            print(f"starting acquisition")
+            caput("13ARV1:cam1:Acquire", 1)
+    
+            time.sleep(2)
+        else:
+            print("ip address already set")
+            # start the new camera
+            print(f"starting acquisition")
+            caput("13ARV1:cam1:Acquire", 1)
+
+    def get_raw_data(self) -> (np.ndarray, dict):
+        if self.testing:
+            img = np.zeros((2000, 2000))
+            img[800:-800, 900:-900] = 1
+            self.resolution = 1.0
+            extra_data = {
+                "ICT1": np.random.randn()*0.1 + 1.0,
+                "ICT2": np.random.randn()*0.1 + 1.0
+            }
+        else:
+            # get pvs
+            results = caget_many(self.pv_names)
+            if results[0] is None:
+                raise RuntimeError(
+                    "epics returned no image values, make sure blackfly phobeus is active"
+                )
+            results[0] = np.uint16(results[0])
+
+            e_pvs = copy(self.extra_pvs)
+            if self.target_charge_pv is not None:
+                e_pvs += [self.target_charge_pv]
+            extra_data = dict(zip(e_pvs, caget_many(e_pvs)))
+            img, nx, ny = results[0], results[1], results[2]
+            img = img.reshape(ny, nx)
+
+        return img, extra_data
 
 
 class AWAFrameGrabberDiagnostic(AWAEPICSImageDiagnostic):
     screen_name: str = "AWANIFrameGrabber"
-    ip_address: str = "N/A"
     array_data_suffix: str = "N/A"
     array_n_cols_suffix: str = "N/A"
     array_n_rows_suffix: str = "N/A"
     resolution_suffix: Union[str, None] = None
+    video_number: int
 
 
     @property
     def pv_names(self) -> list:
         return ["AWANIFG:ImgData"]
 
+    def set_camera(self):
+        input(f"change BNC to V{self.video_number}") 
 
     def get_raw_data(self) -> (np.ndarray, dict):
         if self.testing:
@@ -489,6 +525,10 @@ class AWAFrameGrabberDiagnostic(AWAEPICSImageDiagnostic):
                 e_pvs += [self.target_charge_pv]
             extra_data = dict(zip(e_pvs, caget_many(e_pvs)))
             img = results[0]
+            if img is None:
+                raise RuntimeError(
+                    "epics returned no image values, make sure frame grabber is active"
+                )
             img = img.reshape(480, 640)
 
         return img, extra_data
