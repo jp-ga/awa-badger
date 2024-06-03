@@ -109,3 +109,19 @@ WYG8:
     radius: 350
     ip_address: 192.168.2.111  
     gain: 1.0
+EYG7:
+    type: blackfly
+    center:
+    - 556
+    - 806
+    radius: 350
+    ip_address: 192.168.0.000
+    gain: 1.0
+EYG8:
+    type: blackfly
+    center:
+    - 591
+    - 1079
+    radius: 350
+    ip_address: 192.168.0.000  
+    gain: 1.0
